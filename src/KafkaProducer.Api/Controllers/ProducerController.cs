@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using KafkaProducer.Api.Filters;
 using KafKaProducer.Aggregator.Models;
+using KafKaProducer.Aggregator.Models.Response;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Filters;
@@ -32,9 +33,11 @@ namespace KafkaProducer.Api.Controllers
         // POST api/<ProducerController>
         [SwaggerRequestExample(typeof(ProducerInfo), typeof(ProducerModelExample))]
         [HttpPost("ProduceAsync")] 
-        public async Task ProduceAsync(ProducerInfo info) 
+        public List<ProducerResult> Produce(ProducerInfo info)  
         { 
-            await KafkaProducer.SendAsync(info);
+            KafkaProducer.Produce(info, out List<ProducerResult> producerResult);
+
+            return producerResult;
         }
 
         // PUT api/<ProducerController>/5

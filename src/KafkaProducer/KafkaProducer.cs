@@ -1,17 +1,33 @@
 ﻿using Confluent.Kafka;
 using KafKaProducer.Aggregator.Models;
+using KafKaProducer.Aggregator.Models.Response;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace KafkaProducer
 {
-    public class KafkaProducer
-    { 
-        public static async Task SendAsync(ProducerInfo producerInfo)
+    public static class KafkaProducer
+    {
+        static List<ProducerResult> results;
+        static KafkaProducer()
         {
-            var topicName = producerInfo.TopicName; //Environment.GetEnvironmentVariable("TOPIC_NAME");
-            var kafkaUrl = producerInfo.Address; //Environment.GetEnvironmentVariable("KAFKA_URL");
+            results = new List<ProducerResult>();
+        }
+        public static void Produce(ProducerInfo producerInfo, out List<ProducerResult> producerResults)
+        {
+            SendAsync(producerInfo);
+            producerResults = results; 
+        }
+
+        private static async Task SendAsync(ProducerInfo producerInfo)
+        {
+            List<ProducerResult>  producerResults = new List<ProducerResult>();
+            string topicName = producerInfo.TopicName; //Environment.GetEnvironmentVariable("TOPIC_NAME");
+            string port = producerInfo.Port.ToString();
+            string address = producerInfo.Address;
+            var kafkaUrl = address+"/"+port; //Environment.GetEnvironmentVariable("KAFKA_URL");
 
             var config = new ProducerConfig
             {
@@ -19,13 +35,13 @@ namespace KafkaProducer
             };
 
             // Create a producer that can be used to send messages to kafka that have no key and a value of type string 
-            using var p = new ProducerBuilder<object, string>(config).Build();
+            using var p = new ProducerBuilder<object, object>(config).Build();
 
             var i = 0;
             while (true)
             {
                 // Construct the message to send (generic type must match what was used above when creating the producer)
-                var message = new Message<object, string>
+                var message = new Message<object, object>
                 {
                     Value = $"Message #{++i}"
                 };
@@ -34,8 +50,17 @@ namespace KafkaProducer
                 var dr = await p.ProduceAsync(topicName, message);
                 Console.WriteLine($"Produced message '{dr.Value}' to topic {dr.Topic}, partition {dr.Partition}, offset {dr.Offset}");
 
-                Thread.Sleep(5000);
-            }
+                results.Add(new ProducerResult
+                {
+                    Message = dr.Value,
+                    Topic = dr.Topic,
+                    Partition = dr.Partition,
+                    Offset = dr.Offset,
+                    ProduceStatus = "Produced"
+                });
+
+                Thread.Sleep(TimeSpan.FromMilliseconds(5000));
+            } 
         }
     }
 }
