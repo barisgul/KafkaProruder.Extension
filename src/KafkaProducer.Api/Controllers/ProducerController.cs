@@ -32,10 +32,8 @@ namespace KafkaProducer.Api.Controllers
         // POST api/<ProducerController>
         [SwaggerRequestExample(typeof(ProducerInfo), typeof(ProducerModelExample))]
         [HttpPost("ProduceAsync")] 
-        public async Task ProduceAsync([FromBody] object value) 
-        {
-            ProducerInfo info = JsonConvert.DeserializeObject<ProducerInfo>(value.ToString());
-
+        public async Task ProduceAsync(ProducerInfo info) 
+        { 
             await KafkaProducer.SendAsync(info);
         }
 
